@@ -9,6 +9,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { AudioWaveformPreview } from "@/components/ui/audio-waveform-preview";
 import { useGetTaskMicroTaskDetail } from "@/lib/hooks/useMicrotask";
 import {
   Dialog,
@@ -235,113 +236,10 @@ const MicroTaskList: React.FC<MicroTaskListProps> = ({
       header: () => <div className="text-center">Audio</div>,
       enableSorting: false,
       cell: ({ row }) => {
-        const waveformRef = useRef<HTMLDivElement>(null);
-        const wavesurferRef = useRef<WaveSurfer | null>(null);
-        const [isPlaying, setIsPlaying] = useState(false);
-        const [error, setError] = useState<string | null>(null);
-        const [isReady, setIsReady] = useState(false);
         const fullAudioUrl = row.original.file_path;
 
-        useEffect(() => {
-          if (!fullAudioUrl || row.original.type !== "audio") return;
-
-          let isMounted = true;
-
-          const initializeWaveSurfer = async () => {
-            try {
-              const ws = WaveSurfer.create({
-                container: waveformRef.current!,
-                waveColor: "#73a4d1",
-                progressColor: "#095FAF",
-                cursorColor: "#383351",
-                barWidth: 1,
-                barRadius: 2,
-                cursorWidth: 0.01,
-                height: 30,
-                barGap: 2,
-                url: fullAudioUrl,
-                // plugins: [TimelinePlugin.create(), RegionsPlugin.create()],
-                renderFunction: (peaks, ctx) => {
-                  const height = ctx.canvas.height;
-                  const width = ctx.canvas.width;
-                  const halfHeight = height / 2;
-                  const channel = peaks[0]; // Use first channel for mono or left channel
-                  const pixelsPerSample = width / channel.length;
-
-                  ctx.beginPath();
-                  ctx.moveTo(0, halfHeight);
-
-                  for (let i = 0; i < channel.length; i++) {
-                    const x = i * pixelsPerSample;
-                    const y = halfHeight - channel[i] * halfHeight; // Scale peak to canvas height
-                    ctx.lineTo(x, y);
-                  }
-
-                  ctx.strokeStyle = "#73a4d1";
-                  ctx.lineWidth = 1;
-                  ctx.stroke();
-                },
-              });
-
-              ws.on("ready", () => {
-                if (isMounted) {
-                  setIsReady(true);
-                }
-              });
-
-              ws.on("play", () => isMounted && setIsPlaying(true));
-              ws.on("pause", () => isMounted && setIsPlaying(false));
-              ws.on("finish", () => isMounted && setIsPlaying(false));
-              ws.on("error", (err) => {
-                console.error("WaveSurfer error:", err);
-                isMounted && setError("Failed to load audio");
-              });
-
-              wavesurferRef.current = ws;
-            } catch (err) {
-              console.error("WaveSurfer initialization error:", err);
-              isMounted && setError("Failed to initialize player");
-            }
-          };
-
-          initializeWaveSurfer();
-
-          return () => {
-            isMounted = false;
-            wavesurferRef.current?.destroy();
-            wavesurferRef.current = null;
-          };
-        }, [fullAudioUrl]);
-
-        const handlePlayPause = () => {
-          if (!wavesurferRef.current) return;
-          wavesurferRef.current.playPause();
-        };
-
         if (row.original.type === "audio" && fullAudioUrl) {
-          return (
-            <div className="flex items-center gap-2 min-w-[200px] mt-3 mb-3">
-              <div className="flex-1">
-                <div ref={waveformRef} className="w-full h-[40px]" />
-                {error && (
-                  <div className="text-red-500 text-xs mt-1">{error}</div>
-                )}
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handlePlayPause}
-                disabled={!isReady}
-                className="h-8 w-8 p-0"
-              >
-                {isPlaying ? (
-                  <Pause className="h-4 w-4" />
-                ) : (
-                  <Play className="h-4 w-4" />
-                )}
-              </Button>
-            </div>
-          );
+          return <AudioWaveformPreview url={fullAudioUrl} />;
         } else {
           return (
             <div className="min-w-[100px] text-center text-gray-400">

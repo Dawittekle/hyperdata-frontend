@@ -11,6 +11,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { AudioWaveformPreview } from "@/components/ui/audio-waveform-preview";
 import { useGetMicroTaskDataSetFacilitatorDetail } from "@/lib/hooks/useMicrotask";
 import { ReviewerDatset } from "@/app/types/project";
 import {
@@ -257,119 +258,14 @@ const TaskDataset: React.FC<TaskDatasetProps> = ({
       enableSorting: false,
       size: 250,
       cell: ({ row }) => {
-        const waveformRef = useRef<HTMLDivElement>(null);
-        const wavesurferRef = useRef<WaveSurfer | null>(null);
-        const [isPlaying, setIsPlaying] = useState(false);
-        const [error, setError] = useState<string | null>(null);
-        const [isReady, setIsReady] = useState(false);
         const fullAudioUrl = row.original.microTask?.file_path;
-
-        useEffect(() => {
-          if (!fullAudioUrl || row.original.microTask?.type !== "audio") return;
-
-          let isMounted = true;
-
-          const initializeWaveSurfer = async () => {
-            try {
-              const ws = WaveSurfer.create({
-                container: waveformRef.current!,
-                waveColor: "#73a4d1",
-                progressColor: "#095FAF",
-                cursorColor: "#383351",
-                barWidth: 1,
-                barRadius: 2,
-                cursorWidth: 0.01,
-                height: 30,
-                barGap: 2,
-                url: fullAudioUrl,
-                // plugins: [TimelinePlugin.create(), RegionsPlugin.create()],
-                renderFunction: (peaks, ctx) => {
-                  const height = ctx.canvas.height;
-                  const width = ctx.canvas.width;
-                  const halfHeight = height / 2;
-                  const channel = peaks[0]; // Use first channel for mono or left channel
-                  const pixelsPerSample = width / channel.length;
-
-                  ctx.beginPath();
-                  ctx.moveTo(0, halfHeight);
-
-                  for (let i = 0; i < channel.length; i++) {
-                    const x = i * pixelsPerSample;
-                    const y = halfHeight - channel[i] * halfHeight; // Scale peak to canvas height
-                    ctx.lineTo(x, y);
-                  }
-
-                  ctx.strokeStyle = "#73a4d1";
-                  ctx.lineWidth = 1;
-                  ctx.stroke();
-                },
-              });
-
-              ws.on("ready", () => {
-                if (isMounted) {
-                  setIsReady(true);
-                }
-              });
-
-              ws.on("play", () => isMounted && setIsPlaying(true));
-              ws.on("pause", () => isMounted && setIsPlaying(false));
-              ws.on("finish", () => isMounted && setIsPlaying(false));
-              ws.on("error", (err) => {
-                console.error("WaveSurfer error:", err);
-                isMounted && setError("Failed to load audio");
-              });
-
-              wavesurferRef.current = ws;
-            } catch (err) {
-              console.error("WaveSurfer initialization error:", err);
-              isMounted && setError("Failed to initialize player");
-            }
-          };
-
-          initializeWaveSurfer();
-
-          return () => {
-            isMounted = false;
-            wavesurferRef.current?.destroy();
-            wavesurferRef.current = null;
-          };
-        }, [fullAudioUrl]);
-
-        const handlePlayPause = () => {
-          if (!wavesurferRef.current) return;
-          wavesurferRef.current.playPause();
-        };
 
         if (row.original.microTask?.type === "audio" && fullAudioUrl) {
           return (
-            <div className="w-[250px] max-w-[250px] overflow-hidden">
-              <div className="flex items-center gap-1">
-                <div className="flex-1 min-w-0 max-w-[200px]">
-                  <div
-                    ref={waveformRef}
-                    className="w-full h-[30px] max-w-[200px]"
-                  />
-                  {error && (
-                    <div className="text-red-500 text-xs mt-1 truncate">
-                      {error}
-                    </div>
-                  )}
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handlePlayPause}
-                  disabled={!isReady}
-                  className="h-6 w-6 p-0 flex-shrink-0"
-                >
-                  {isPlaying ? (
-                    <Pause className="h-3 w-3" />
-                  ) : (
-                    <Play className="h-3 w-3" />
-                  )}
-                </Button>
-              </div>
-            </div>
+            <AudioWaveformPreview
+              url={fullAudioUrl}
+              wrapperClassName="w-[250px] max-w-[250px] overflow-hidden"
+            />
           );
         } else {
           return (
@@ -385,88 +281,7 @@ const TaskDataset: React.FC<TaskDatasetProps> = ({
       header: "Data",
       size: 250,
       cell: ({ row }) => {
-        const waveformRef = useRef<HTMLDivElement>(null);
-        const wavesurferRef = useRef<WaveSurfer | null>(null);
-        const [isPlaying, setIsPlaying] = useState(false);
-        const [error, setError] = useState<string | null>(null);
-        const [isReady, setIsReady] = useState(false);
         const fullAudioUrl = row.original.file_path;
-
-        useEffect(() => {
-          if (!fullAudioUrl || row.original.type !== "audio") return;
-
-          let isMounted = true;
-
-          const initializeWaveSurfer = async () => {
-            try {
-              const ws = WaveSurfer.create({
-                container: waveformRef.current!,
-                waveColor: "#73a4d1",
-                progressColor: "#095FAF",
-                cursorColor: "#383351",
-                barWidth: 1,
-                barRadius: 2,
-                cursorWidth: 0.01,
-                height: 30,
-                barGap: 2,
-                url: fullAudioUrl,
-                // plugins: [TimelinePlugin.create(), RegionsPlugin.create()],
-                renderFunction: (peaks, ctx) => {
-                  const height = ctx.canvas.height;
-                  const width = ctx.canvas.width;
-                  const halfHeight = height / 2;
-                  const channel = peaks[0]; // Use first channel for mono or left channel
-                  const pixelsPerSample = width / channel.length;
-
-                  ctx.beginPath();
-                  ctx.moveTo(0, halfHeight);
-
-                  for (let i = 0; i < channel.length; i++) {
-                    const x = i * pixelsPerSample;
-                    const y = halfHeight - channel[i] * halfHeight; // Scale peak to canvas height
-                    ctx.lineTo(x, y);
-                  }
-
-                  ctx.strokeStyle = "#73a4d1";
-                  ctx.lineWidth = 1;
-                  ctx.stroke();
-                },
-              });
-
-              ws.on("ready", () => {
-                if (isMounted) {
-                  setIsReady(true);
-                }
-              });
-
-              ws.on("play", () => isMounted && setIsPlaying(true));
-              ws.on("pause", () => isMounted && setIsPlaying(false));
-              ws.on("finish", () => isMounted && setIsPlaying(false));
-              ws.on("error", (err) => {
-                console.error("WaveSurfer error:", err);
-                isMounted && setError("Failed to load audio");
-              });
-
-              wavesurferRef.current = ws;
-            } catch (err) {
-              console.error("WaveSurfer initialization error:", err);
-              isMounted && setError("Failed to initialize player");
-            }
-          };
-
-          initializeWaveSurfer();
-
-          return () => {
-            isMounted = false;
-            wavesurferRef.current?.destroy();
-            wavesurferRef.current = null;
-          };
-        }, [fullAudioUrl]);
-
-        const handlePlayPause = () => {
-          if (!wavesurferRef.current) return;
-          wavesurferRef.current.playPause();
-        };
 
         if (row.original.type !== "audio" || !fullAudioUrl) {
           return (
@@ -477,34 +292,10 @@ const TaskDataset: React.FC<TaskDatasetProps> = ({
         }
 
         return (
-          <div className="w-[250px] max-w-[250px] overflow-hidden">
-            <div className="flex items-center gap-1">
-              <div className="flex-1 min-w-0 max-w-[200px]">
-                <div
-                  ref={waveformRef}
-                  className="w-full h-[30px] max-w-[200px]"
-                />
-                {error && (
-                  <div className="text-red-500 text-xs mt-1 truncate">
-                    {error}
-                  </div>
-                )}
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handlePlayPause}
-                disabled={!isReady}
-                className="h-6 w-6 p-0 flex-shrink-0"
-              >
-                {isPlaying ? (
-                  <Pause className="h-3 w-3" />
-                ) : (
-                  <Play className="h-3 w-3" />
-                )}
-              </Button>
-            </div>
-          </div>
+          <AudioWaveformPreview
+            url={fullAudioUrl}
+            wrapperClassName="w-[250px] max-w-[250px] overflow-hidden"
+          />
         );
       },
     },

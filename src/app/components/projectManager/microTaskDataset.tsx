@@ -9,6 +9,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { AudioWaveformPreview } from "@/components/ui/audio-waveform-preview";
 import { renderPaginationButtons } from "@/components/ui/paginationHelper";
 import { useGetMicroTaskDataSetDetail } from "@/lib/hooks/useMicrotask";
 import { ReviewerDatset } from "@/app/types/project";
@@ -245,75 +246,12 @@ const TaskDataset: React.FC<TaskDatasetProps> = ({ microTaskId }) => {
         const isAudio = mt?.type === "audio";
         const url = mt?.file_path;
 
-        // ── WaveSurfer logic (only for audio) ──
-        const waveformRef = useRef<HTMLDivElement>(null);
-        const wsRef = useRef<WaveSurfer | null>(null);
-        const [playing, setPlaying] = useState(false);
-        const [ready, setReady] = useState(false);
-        const [error, setError] = useState<string | null>(null);
-
-        useEffect(() => {
-          if (!isAudio || !url) return;
-
-          let mounted = true;
-          const init = async () => {
-            try {
-              const ws = WaveSurfer.create({
-                container: waveformRef.current!,
-                waveColor: "#73a4d1",
-                progressColor: "#095FAF",
-                height: 30,
-                barWidth: 1,
-                barGap: 2,
-                url,
-              });
-
-              ws.on("ready", () => mounted && setReady(true));
-              ws.on("play", () => mounted && setPlaying(true));
-              ws.on("pause", () => mounted && setPlaying(false));
-              ws.on("finish", () => mounted && setPlaying(false));
-              ws.on("error", (e) => {
-                console.error(e);
-                mounted && setError("Failed to load audio");
-              });
-
-              wsRef.current = ws;
-            } catch (e) {
-              console.error(e);
-              mounted && setError("Init error");
-            }
-          };
-          init();
-
-          return () => {
-            mounted = false;
-            wsRef.current?.destroy();
-          };
-        }, [isAudio, url]);
-
-        const toggle = () => wsRef.current?.playPause();
-
-        if (isAudio && url) {
+                if (isAudio && url) {
           return (
-            <div className="flex items-center gap-2 min-w-[220px]">
-              <div className="flex-1">
-                <div ref={waveformRef} className="h-[40px] w-full" />
-                {error && <p className="text-xs text-red-500">{error}</p>}
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={toggle}
-                disabled={!ready}
-                className="h-8 w-8 p-0"
-              >
-                {playing ? (
-                  <Pause className="h-4 w-4" />
-                ) : (
-                  <Play className="h-4 w-4" />
-                )}
-              </Button>
-            </div>
+            <AudioWaveformPreview
+              url={url}
+              wrapperClassName="flex items-center gap-2 min-w-[220px]"
+            />
           );
         }
 
@@ -335,76 +273,13 @@ const TaskDataset: React.FC<TaskDatasetProps> = ({ microTaskId }) => {
         const url = row.original.file_path;
         const isAudio = row.original.type === "audio";
 
-        // ── WaveSurfer (audio) ──
-        const waveformRef = useRef<HTMLDivElement>(null);
-        const wsRef = useRef<WaveSurfer | null>(null);
-        const [playing, setPlaying] = useState(false);
-        const [ready, setReady] = useState(false);
-        const [error, setError] = useState<string | null>(null);
-
-        useEffect(() => {
-          if (!isAudio || !url) return;
-
-          let mounted = true;
-          const init = async () => {
-            try {
-              const ws = WaveSurfer.create({
-                container: waveformRef.current!,
-                waveColor: "#73a4d1",
-                progressColor: "#095FAF",
-                height: 30,
-                barWidth: 1,
-                barGap: 2,
-                url,
-              });
-
-              ws.on("ready", () => mounted && setReady(true));
-              ws.on("play", () => mounted && setPlaying(true));
-              ws.on("pause", () => mounted && setPlaying(false));
-              ws.on("finish", () => mounted && setPlaying(false));
-              ws.on("error", (e) => {
-                console.error(e);
-                mounted && setError("Failed to load audio");
-              });
-
-              wsRef.current = ws;
-            } catch (e) {
-              console.error(e);
-              mounted && setError("Init error");
-            }
-          };
-          init();
-
-          return () => {
-            mounted = false;
-            wsRef.current?.destroy();
-          };
-        }, [isAudio, url]);
-
-        const toggle = () => wsRef.current?.playPause();
-
-        // ── Render ──
+                // ── Render ──
         if (isAudio && url) {
           return (
-            <div className="flex items-center gap-2 w-full max-w-[280px] mt-3 mb-3">
-              <div className="flex items-center gap-2 w-full">
-                <div ref={waveformRef} className="h-[40px] w-full" />
-                {error && <p className="text-xs text-red-500">{error}</p>}
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={toggle}
-                disabled={!ready}
-                className="h-8 w-8 p-0"
-              >
-                {playing ? (
-                  <Pause className="h-4 w-4" />
-                ) : (
-                  <Play className="h-4 w-4" />
-                )}
-              </Button>
-            </div>
+            <AudioWaveformPreview
+              url={url}
+              wrapperClassName="flex items-center gap-2 w-full max-w-[280px] mt-3 mb-3"
+            />
           );
         }
 
